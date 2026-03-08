@@ -47,3 +47,6 @@ coverage/
 *.tgz
 *.tar.gz
 .cache/
+
+# Local Netlify folder
+.netlify
