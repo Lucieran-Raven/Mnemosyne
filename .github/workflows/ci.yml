@@ -1,0 +1,145 @@
+name: CI - Test & Lint
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  test-api:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: mnemosyne_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        working-directory: ./api
+        run: |
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov
+
+      - name: Run tests
+        working-directory: ./api
+        env:
+          DATABASE_URL: postgresql+asyncpg://test:test@localhost:5432/mnemosyne_test
+          REDIS_URL: redis://localhost:6379/0
+          ENVIRONMENT: testing
+          SECRET_KEY: test-secret-key
+        run: pytest --cov=app --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./api/coverage.xml
+
+  test-sdk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install dependencies
+        working-directory: ./sdk
+        run: poetry install --with dev
+
+      - name: Run tests
+        working-directory: ./sdk
+        run: poetry run pytest --cov=mnemosyne --cov-report=xml
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v3
+        with:
+          files: ./sdk/coverage.xml
+
+  lint-api:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install linting tools
+        run: |
+          pip install ruff mypy
+
+      - name: Lint with Ruff
+        working-directory: ./api
+        run: ruff check .
+
+      - name: Type check with MyPy
+        working-directory: ./api
+        run: mypy app/
+
+  lint-dashboard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        working-directory: ./dashboard
+        run: npm ci
+
+      - name: Lint
+        working-directory: ./dashboard
+        run: npm run lint
+
+      - name: Type check
+        working-directory: ./dashboard
+        run: npm run type-check
+
+  build-docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build API Docker image
+        working-directory: ./api
+        run: docker build -t mnemosyne-api:test .
+
+      - name: Build Dashboard Docker image
+        working-directory: ./dashboard
+        run: docker build -t mnemosyne-dashboard:test .
