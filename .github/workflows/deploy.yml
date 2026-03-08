@@ -15,9 +15,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '18'
-          cache: 'npm'
-          cache-dependency-path: dashboard/package-lock.json
+          node-version: '20'
       
       - name: Install dependencies
         working-directory: ./dashboard
@@ -29,15 +27,6 @@ jobs:
         env:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
-      
-      - name: Debug - Check build output
-        working-directory: ./dashboard
-        run: |
-          echo  Current directory: C:\Users\HP\CascadeProjects\mnemosyne 
-          echo  Listing all files:
-          ls -la
-          echo Checking .next folder:
-          ls -la .next 2>/dev/null || echo .next folder NOT FOUND
       
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v3.0
