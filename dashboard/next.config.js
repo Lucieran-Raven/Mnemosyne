@@ -2,7 +2,6 @@
 const nextConfig = {
   output: 'standalone',
   images: {
-    unoptimized: true,
     domains: ['img.clerk.com'],
   },
   env: {
