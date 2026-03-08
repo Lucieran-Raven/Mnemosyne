@@ -30,13 +30,19 @@ jobs:
           NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
           CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
       
+      - name: Debug - Check build output
+        working-directory: ./dashboard
+        run: |
+          echo  Current directory: C:\Users\HP\CascadeProjects\mnemosyne 
+          echo  Listing all files:
+          ls -la
+          echo Checking .next folder:
+          ls -la .next 2>/dev/null || echo .next folder NOT FOUND
+      
       - name: Deploy to Netlify
-        uses: nwtgck/actions-netlify@v3.0
+        uses: netlify/actions/cli@master
         with:
-          publish-dir: './dashboard/.next'
-          production-branch: main
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          deploy-message: "Deploy from GitHub Actions"
+          args: deploy --dir=.next --prod
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
           NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
