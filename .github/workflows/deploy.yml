@@ -21,7 +21,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: ./dashboard
-        run: npm ci
+        run: npm ci --legacy-peer-deps
       
       - name: Build
         working-directory: ./dashboard
@@ -33,7 +33,7 @@ jobs:
       - name: Deploy to Netlify
         uses: nwtgck/actions-netlify@v3.0
         with:
-          publish-dir: './dashboard/dist'
+          publish-dir: './dashboard/.next'
           production-branch: main
           github-token: ${{ secrets.GITHUB_TOKEN }}
           deploy-message: "Deploy from GitHub Actions"
